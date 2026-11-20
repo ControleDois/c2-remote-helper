@@ -1186,6 +1186,12 @@ fn process_software_update_check_response(bytes: Bytes) -> ResultType<()> {
 // Because the url is always `https://api.rustdesk.com/version/latest`.
 #[tokio::main(flavor = "current_thread")]
 pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
+    // C2 Remote Helper: the update source is the official RustDesk release,
+    // which would replace this build with the upstream app.
+    if is_custom_client() {
+        clear_software_update_url();
+        return Ok(());
+    }
     let (request, url) =
         hbb_common::version_check_request(hbb_common::VER_TYPE_RUSTDESK_CLIENT.to_string());
     let proxy_conf = Config::get_socks();
@@ -1316,6 +1322,14 @@ fn get_api_server_(api: String, custom: String) -> String {
         } else {
             return format!("http://{}", s);
         }
+    }
+    // C2 Remote Helper: never fall back to the RustDesk public API server.
+    if is_custom_client() {
+        return format!(
+            "http://{}:{}",
+            config::RENDEZVOUS_SERVERS[0],
+            config::RENDEZVOUS_PORT - 2
+        );
     }
     "https://admin.rustdesk.com".to_owned()
 }

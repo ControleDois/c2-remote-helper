@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
 
 env:
+  # C2 Remote Helper: servidor proprio (variaveis do repositorio, em Settings > Variables)
+  C2_RENDEZVOUS_SERVER: "${{ vars.C2_RENDEZVOUS_SERVER }}"
+  C2_RS_PUB_KEY: "${{ vars.C2_RS_PUB_KEY }}"
   RUST_VERSION: "1.75" # https://github.com/rustdesk/rustdesk/discussions/7503
   CARGO_NDK_VERSION: "3.1.2"
   LLVM_VERSION: "15.0.6"
