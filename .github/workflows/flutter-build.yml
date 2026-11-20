@@ -476,9 +476,20 @@ jobs:
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
           sed -i '/dpiAware/d' res/manifest.xml
+          dist=../../rustdesk
+          exe=rustdesk.exe
+          if [ "${{ inputs.only-windows }}" = "true" ]; then
+            # C2 Remote Helper: a instalação copia a pasta como está e cria os atalhos para
+            # <nome do app>.exe, então o exe precisa ir no pacote já com esse nome.
+            rm -rf ./c2-portable-dist
+            cp -r ./rustdesk ./c2-portable-dist
+            mv ./c2-portable-dist/rustdesk.exe ./c2-portable-dist/C2RemoteHelper.exe
+            dist=../../c2-portable-dist
+            exe=C2RemoteHelper.exe
+          fi
           pushd ./libs/portable
           pip3 install -r requirements.txt
-          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          python3 ./generate.py -f $dist/ -o . -e $dist/$exe
           popd
           mkdir -p ./SignOutput
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
