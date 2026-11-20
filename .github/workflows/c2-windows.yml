@@ -1,0 +1,23 @@
+name: C2 Remote Helper - Windows
+
+# Build do C2RemoteHelper so para Windows (x64 e ARM64). Roda na mao, pela aba
+# Actions. Gera os instaladores (.exe e .msi) numa pre-release com a tag abaixo.
+on:
+  workflow_dispatch:
+    inputs:
+      upload-tag:
+        description: "Tag da pre-release com os instaladores"
+        type: string
+        default: "c2-nightly"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    uses: ./.github/workflows/flutter-build.yml
+    secrets: inherit
+    with:
+      upload-artifact: true
+      upload-tag: ${{ inputs.upload-tag }}
+      only-windows: true
