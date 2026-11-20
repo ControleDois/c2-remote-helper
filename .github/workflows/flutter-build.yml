@@ -499,7 +499,15 @@ jobs:
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
           pushd ./res/msi
-          python preprocess.py --arp -d ../../rustdesk
+          if ('${{ inputs.only-windows }}' -eq 'true') {
+            # C2 Remote Helper: o MSI registra o produto com o nome do app (pasta, atalhos e
+            # Adicionar/Remover programas); o script acha o app como <nome>.exe na pasta.
+            Copy-Item -Recurse ../../rustdesk ../../c2-msi-dist
+            Rename-Item ../../c2-msi-dist/rustdesk.exe C2RemoteHelper.exe
+            python preprocess.py --arp -d ../../c2-msi-dist --app-name C2RemoteHelper -m "Controle Dois"
+          } else {
+            python preprocess.py --arp -d ../../rustdesk
+          }
           nuget restore msi.sln
           $msiPlatform = if ('${{ matrix.job.arch }}' -eq 'aarch64') { 'ARM64' } else { 'x64' }
           msbuild msi.sln -p:Configuration=Release -p:Platform=$msiPlatform /p:TargetVersion=Windows10
@@ -577,6 +585,14 @@ jobs:
           path: ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
           if-no-files-found: error
 
+      - name: Rename C2 Remote Helper installers
+        # Nome fixo, sem versão: o link de download do site e do sistema não muda a cada build.
+        if: env.UPLOAD_ARTIFACT == 'true' && inputs.only-windows
+        shell: bash
+        run: |
+          mv ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe ./SignOutput/c2-remote-helper-${{ matrix.job.arch }}.exe
+          mv ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi ./SignOutput/c2-remote-helper-${{ matrix.job.arch }}.msi
+
       - name: Publish Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         if: env.UPLOAD_ARTIFACT == 'true' && env.PUBLISH_UPDATE_METADATA != 'true'
@@ -586,6 +602,8 @@ jobs:
           files: |
             ./SignOutput/rustdesk-*.msi
             ./SignOutput/rustdesk-*.exe
+            ./SignOutput/c2-remote-helper-*.msi
+            ./SignOutput/c2-remote-helper-*.exe
 
   # The fallback for the flutter version, we use Sciter for 32bit Windows.
   build-for-windows-sciter:
